@@ -21,7 +21,8 @@ void main() {
     final q = await bridge.rpc({'site': 'test', 'method': 'qualities', 'args': {'session': id}}) as List;
     expect(q.first['Data'], 0);
     final urls = await bridge.rpc({'site': 'test', 'method': 'urls', 'args': {'session': id, 'quality': 0}}) as Map;
-    expect(urls['headers'], {'user-agent': 'test'});
+    expect(urls['headers'], isEmpty);
+    expect((urls['urls'] as List).single, startsWith('http://127.0.0.1:17865/stream/$id/0/'));
   });
   test('rejects missing sessions, cross-platform sessions and invalid quality', () async {
     await expectLater(bridge.rpc({'site': 'test', 'method': 'qualities', 'args': {'session': 'missing'}}), throwsStateError);

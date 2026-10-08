@@ -40,6 +40,10 @@ jobs:
           cl /std:c++17 /EHsc SimpleLive.Bridge/launcher.cpp /Fe:AllLive.UWP/Bridge/bridge-launcher.exe /link /SUBSYSTEM:WINDOWS
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           Copy-Item vendor/simple_live/LICENSE AllLive.UWP/Bridge/SimpleLive-LICENSE.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Douyu-helper-x64
+          path: SimpleLive.Bridge/build/bundle/
       - name: Build official UWP player with Douyu and tab order
         shell: pwsh
         run: |

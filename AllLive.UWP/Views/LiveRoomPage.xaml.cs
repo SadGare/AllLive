@@ -498,15 +498,6 @@ namespace AllLive.UWP.Views
 
                 var config = new MediaSourceConfig();
                 config.FFmpegOptions.Add("rtsp_transport", "tcp");
-                if (liveRoomVM.SiteName == "斗鱼直播")
-                {
-                    // Douyu CDN connections can end after 300 seconds. Continue
-                    // reading the same URL without rebuilding the media player.
-                    config.FFmpegOptions.Add("reconnect", 1);
-                    config.FFmpegOptions.Add("reconnect_streamed", 1);
-                    config.FFmpegOptions.Add("reconnect_at_eof", 1);
-                    config.FFmpegOptions.Add("reconnect_delay_max", 5);
-                }
                 var decoder = SettingHelper.GetValue<int>(SettingHelper.VIDEO_DECODER, Utils.IsXbox ? 1 : 0);
                 switch (decoder)
                 {

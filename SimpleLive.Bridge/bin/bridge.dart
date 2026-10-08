@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 import 'package:simple_live_core/simple_live_core.dart';
+import 'douyu_stream.dart';
 
 const port = 17865;
 const coreRevision = 'ba828e6783b176ea5709fcd09f0eb01dfaceeb51';
@@ -74,7 +75,8 @@ Future<Object?> rpc(Map<String, dynamic> p) async {
       final index = args['quality'] as int;
       if (index < 0 || index >= s.qualities.length) throw ArgumentError('Invalid quality');
       final r = await site.getPlayUrls(detail: s.detail, quality: s.qualities[index]);
-      return {'urls': r.urls, 'headers': r.headers};
+      return {'urls': [for (var i = 0; i < r.urls.length; i++)
+        'http://127.0.0.1:$port/stream/${args['session']}/$index/$i'], 'headers': <String, String>{}};
     case 'superChat':
       return (await site.getSuperChatMessage(roomId: args['roomId'])).map((m) => {
         'UserName': m.userName, 'Face': m.face, 'Message': m.message, 'Price': m.price,
@@ -137,6 +139,17 @@ Future<void> handle(HttpRequest request) async {
     if (request.uri.path == '/danmaku' && WebSocketTransformer.isUpgradeRequest(request)) {
       websocketRequest = true;
       await danmaku(request); return;
+    }
+    final path = request.uri.pathSegments;
+    if (request.method == 'GET' && path.length == 4 && path.first == 'stream') {
+      final s = session(path[1], sites['douyu']!);
+      final quality = int.parse(path[2]);
+      final line = int.parse(path[3]);
+      if (quality < 0 || quality >= s.qualities.length || line < 0) throw ArgumentError('Invalid stream');
+      final heartbeat = Timer.periodic(const Duration(seconds: 10), (_) { lastActivity = DateTime.now(); });
+      try { await serveDouyuStream(request, s.site, s.detail, s.qualities[quality], line); }
+      finally { heartbeat.cancel(); }
+      return;
     }
     request.response.headers.contentType = ContentType.json;
     if (request.method == 'GET' && request.uri.path == '/health') {
