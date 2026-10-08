@@ -111,7 +111,7 @@ Future<void> serveDouyuStream(HttpRequest request, LiveSite site,
         final connectionStart = DateTime.now();
         try {
           final upstream = await client.getUrl(Uri.parse(urls.urls[index]));
-          urls.headers.forEach(upstream.headers.set);
+          urls.headers?.forEach(upstream.headers.set);
           final response = await upstream.close().timeout(const Duration(seconds: 15));
           if (response.statusCode != 200) { await response.drain<void>(); continue; }
           await for (final bytes in continuity.append(response.timeout(const Duration(seconds: 20)))) {
