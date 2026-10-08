@@ -34,6 +34,7 @@ namespace AllLive.UWP
     public sealed partial class MainPage : Page
     {
         private bool applyingNavigationOrder;
+        private bool startupSelectionApplied;
 
         public MainPage()
         {
@@ -43,7 +44,7 @@ namespace AllLive.UWP
             MessageCenter.UpdatePanelDisplayModeEvent += MessageCenter_UpdatePanelDisplayModeEvent;
             this.KeyDown += MainPage_KeyDown;
             SetPaneMode();
-            ApplyNavigationOrder(true);
+            ApplyNavigationOrder(false);
         }
 
         private void MainPage_KeyDown(object sender, KeyRoutedEventArgs e)
@@ -162,6 +163,11 @@ namespace AllLive.UWP
         private void navigationView_Loaded(object sender, RoutedEventArgs e)
         {
             navigationView.IsPaneOpen = false;
+            if (!startupSelectionApplied)
+            {
+                startupSelectionApplied = true;
+                navigationView.SelectedItem = navigationView.MenuItems[0];
+            }
         }
 
         private async Task CheckUpdate()
