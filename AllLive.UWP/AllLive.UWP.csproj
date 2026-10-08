@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
@@ -154,6 +154,8 @@
     <Compile Include="Helper\LogHelper.cs" />
     <Compile Include="Helper\MessageCenter.cs" />
     <Compile Include="Helper\SettingHelper.cs" />
+    <Compile Include="Helper\NavigationOrder.cs" />
+    <Compile Include="Helper\DouyuBridge.cs" />
     <Compile Include="Helper\Utils.cs" />
     <Compile Include="MainPage.xaml.cs">
       <DependentUpon>MainPage.xaml</DependentUpon>
@@ -396,7 +398,12 @@
       <Name>AllLive.Core</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <SDKReference Include="WindowsDesktop, Version=10.0.19041.0" />
+    <Content Include="Bridge\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
   <ItemGroup>
     <None Include="AllLive.UWP_TemporaryKey.pfx" />
     <Content Include="Assets\Fonts\SegoeFluentIcons.ttf" />

@@ -361,3 +361,8 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+!SimpleLive.Bridge/bin/
+!SimpleLive.Bridge/bin/bridge.dart
+SimpleLive.Bridge/.dart_tool/
+SimpleLive.Bridge/build/
+AllLive.UWP/Bridge/

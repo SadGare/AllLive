@@ -1,0 +1,52 @@
+name: Build clean AllLive
+on:
+  push:
+    branches: [clean-douyu-tabs]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: windows-2022
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+      - uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+      - uses: microsoft/setup-msbuild@v2
+      - name: Test and compile Douyu helper
+        working-directory: SimpleLive.Bridge
+        shell: pwsh
+        run: |
+          dart pub get
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          dart analyze bin test
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          dart test
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          dart build cli --target=bin/bridge.dart --output=build
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Bundle Douyu helper
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory AllLive.UWP/Bridge -Force | Out-Null
+          Copy-Item SimpleLive.Bridge/build/bundle AllLive.UWP/Bridge/bundle -Recurse
+          cl /std:c++17 /EHsc SimpleLive.Bridge/launcher.cpp /Fe:AllLive.UWP/Bridge/bridge-launcher.exe /link /SUBSYSTEM:WINDOWS
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          Copy-Item vendor/simple_live/LICENSE AllLive.UWP/Bridge/SimpleLive-LICENSE.txt
+      - name: Build official UWP player with Douyu and tab order
+        shell: pwsh
+        run: |
+          msbuild AllLive.UWP/AllLive.UWP.csproj /restore /m /p:Configuration=Release /p:Platform=x64 /p:AppxBundle=Never /p:AppxPackageSigningEnabled=false /p:GenerateTemporaryStoreCertificate=false /p:UapAppxPackageBuildMode=SideloadOnly /p:AppxPackageDir="$env:GITHUB_WORKSPACE\dist\" /p:AppxSymbolPackageEnabled=false /p:AppxAutoIncrementPackageRevision=false
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AllLive-clean-x64
+          path: dist/
+          if-no-files-found: error

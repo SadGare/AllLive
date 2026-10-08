@@ -1,4 +1,4 @@
-﻿<Page
+<Page
     x:Class="AllLive.UWP.MainPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -35,7 +35,6 @@
             <muxc:NavigationView.MenuItems>
                 <muxc:NavigationViewItem
                     Content="推荐"
-                    IsSelected="True"
                     Tag="RecomendPage">
                     <muxc:NavigationViewItem.Icon>
                         <FontIcon FontFamily="{StaticResource SegoeFluent}" Glyph="&#xE10F;" />

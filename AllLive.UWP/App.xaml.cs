@@ -1,4 +1,4 @@
-﻿using AllLive.UWP.Helper;
+using AllLive.UWP.Helper;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -35,6 +35,7 @@ namespace AllLive.UWP
         {
 
             this.InitializeComponent();
+            DouyuBridge.Configure();
             if (Utils.IsXbox && SettingHelper.GetValue<int>(SettingHelper.XBOX_MODE, 0) == 0)
             {
                 this.RequiresPointerMode = Windows.UI.Xaml.ApplicationRequiresPointerMode.WhenRequested;

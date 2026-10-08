@@ -1,0 +1,14 @@
+name: all_live_bridge
+publish_to: none
+environment:
+  sdk: '>=3.10.0 <4.0.0'
+dependencies:
+  simple_live_core:
+    path: ../vendor/simple_live/simple_live_core
+dependency_overrides:
+  dart_quickjs:
+    git:
+      url: https://github.com/xiaoyaocz/dart_quickjs
+      ref: a31682801e209f925cdb90fcf4e379e512b713d2
+dev_dependencies:
+  test: ^1.25.0

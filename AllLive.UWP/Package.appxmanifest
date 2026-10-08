@@ -1,16 +1,18 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 
 <Package
   xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
   xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest"
   xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
   xmlns:uap3="http://schemas.microsoft.com/appx/manifest/uap/windows10/3"
-  IgnorableNamespaces="uap mp uap3">
+  xmlns:desktop="http://schemas.microsoft.com/appx/manifest/desktop/windows10"
+  xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+  IgnorableNamespaces="uap mp uap3 desktop rescap">
 
   <Identity
-    Name="5421.24244EC421563"
-    Publisher="CN=xiaoyaocz"
-    Version="2.3.2.0" />
+    Name="SadGare.AllLive.SimpleLive"
+    Publisher="CN=SadGare.AllLive"
+    Version="2.5.0.0" />
 
   <mp:PhoneIdentity PhoneProductId="a29ec443-66b9-4d8d-8fd1-ffa29cf08e96" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
@@ -48,11 +50,17 @@
         <uap:SplashScreen Image="Assets\SplashScreen.png" />
         <uap:LockScreen BadgeLogo="Assets\BadgeLogo.png" Notification="badge"/>
       </uap:VisualElements>
+      <Extensions>
+        <desktop:Extension Category="windows.fullTrustProcess" Executable="Bridge\bridge-launcher.exe">
+          <desktop:FullTrustProcess />
+        </desktop:Extension>
+      </Extensions>
     </Application>
   </Applications>
 
   <Capabilities>
     <Capability Name="internetClient" />
+    <rescap:Capability Name="runFullTrust" />
     <uap3:Capability Name="backgroundMediaPlayback"/>
     <uap:Capability Name="picturesLibrary"/>
   </Capabilities>

@@ -1,4 +1,4 @@
-﻿using AllLive.UWP.Helper;
+using AllLive.UWP.Helper;
 using AllLive.UWP.ViewModels;
 using Microsoft.Toolkit.Uwp.Helpers;
 using Microsoft.UI.Xaml.Controls;
@@ -28,11 +28,43 @@ namespace AllLive.UWP.Views
     /// </summary>
     public sealed partial class SettingsPage : Page
     {
+        private readonly System.Collections.ObjectModel.ObservableCollection<NavigationTabOption> navigationTabs =
+            new System.Collections.ObjectModel.ObservableCollection<NavigationTabOption>();
+
+        private void LoadNavigationTabs(IEnumerable<string> ids)
+        {
+            var labels = new Dictionary<string, string> { { "FavoritePage", "关注" }, { "RecomendPage", "推荐" },
+                { "CategoryPage", "分类" }, { "HistoryPage", "历史" }, { "SyncPage", "同步" } };
+            navigationTabs.Clear();
+            foreach (var id in ids) navigationTabs.Add(new NavigationTabOption { Id = id, Label = labels[id] });
+            NavigationTabs.ItemsSource = navigationTabs;
+        }
+        private void MoveNavigationTab(object sender, int offset)
+        {
+            var id = (sender as Button)?.Tag?.ToString();
+            var item = navigationTabs.FirstOrDefault(x => x.Id == id);
+            var index = navigationTabs.IndexOf(item);
+            if (index >= 0 && index + offset >= 0 && index + offset < navigationTabs.Count)
+                navigationTabs.Move(index, index + offset);
+        }
+        private void MoveNavigationTabUp(object sender, RoutedEventArgs e) => MoveNavigationTab(sender, -1);
+        private void MoveNavigationTabDown(object sender, RoutedEventArgs e) => MoveNavigationTab(sender, 1);
+        private void SaveNavigationTabs(object sender, RoutedEventArgs e)
+        {
+            NavigationOrder.Save(navigationTabs.Select(x => x.Id));
+            Utils.ShowMessageToast("排序已保存，下次启动打开第一项");
+        }
+        private void ResetNavigationTabs(object sender, RoutedEventArgs e)
+        {
+            LoadNavigationTabs(NavigationOrder.Default);
+            NavigationOrder.Save(NavigationOrder.Default);
+        }
         readonly SettingVM settingVM;
         public SettingsPage()
         {
             settingVM = new SettingVM();
             this.InitializeComponent();
+            LoadNavigationTabs(NavigationOrder.Load());
             if (Utils.IsXbox)
             {
                 SettingsPaneDiaplsyMode.Visibility = Visibility.Collapsed;

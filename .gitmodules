@@ -1,0 +1,3 @@
+[submodule "vendor/simple_live"]
+	path = vendor/simple_live
+	url = https://github.com/xiaoyaocz/dart_simple_live.git

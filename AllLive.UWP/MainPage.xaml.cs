@@ -1,4 +1,4 @@
-﻿using AllLive.Core.Interface;
+using AllLive.Core.Interface;
 using AllLive.UWP.Helper;
 using AllLive.UWP.Models;
 using AllLive.UWP.ViewModels;
@@ -33,6 +33,7 @@ namespace AllLive.UWP
     /// </summary>
     public sealed partial class MainPage : Page
     {
+        private bool applyingNavigationOrder;
 
         public MainPage()
         {
@@ -42,6 +43,7 @@ namespace AllLive.UWP
             MessageCenter.UpdatePanelDisplayModeEvent += MessageCenter_UpdatePanelDisplayModeEvent;
             this.KeyDown += MainPage_KeyDown;
             SetPaneMode();
+            ApplyNavigationOrder(true);
         }
 
         private void MainPage_KeyDown(object sender, KeyRoutedEventArgs e)
@@ -63,6 +65,22 @@ namespace AllLive.UWP
         private void MessageCenter_UpdatePanelDisplayModeEvent(object sender, EventArgs e)
         {
             SetPaneMode();
+            ApplyNavigationOrder(false);
+        }
+
+        private void ApplyNavigationOrder(bool startup)
+        {
+            var items = navigationView.MenuItems.OfType<Microsoft.UI.Xaml.Controls.NavigationViewItem>()
+                .ToDictionary(x => x.Tag.ToString());
+            var selected = navigationView.SelectedItem;
+            applyingNavigationOrder = true;
+            try
+            {
+                navigationView.MenuItems.Clear();
+                foreach (var id in NavigationOrder.Load()) navigationView.MenuItems.Add(items[id]);
+            }
+            finally { applyingNavigationOrder = false; }
+            navigationView.SelectedItem = startup ? navigationView.MenuItems[0] : selected;
         }
 
         private void SetPaneMode()
@@ -92,7 +110,11 @@ namespace AllLive.UWP
 
         private void NavigationView_SelectionChanged(Microsoft.UI.Xaml.Controls.NavigationView sender, Microsoft.UI.Xaml.Controls.NavigationViewSelectionChangedEventArgs args)
         {
+            if (applyingNavigationOrder) return;
             var item = args.SelectedItem as Microsoft.UI.Xaml.Controls.NavigationViewItem;
+            if (item == null) return;
+            if (args.IsSettingsSelected) { frame.Navigate(typeof(SettingsPage)); return; }
+            if (item.Tag == null) return;
             if (item.Tag.ToString() == "设置" || item.Tag.ToString() == "Settings")
             {
                 item.Tag = "SettingsPage";
