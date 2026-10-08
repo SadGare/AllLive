@@ -131,6 +131,7 @@ Future<void> main() async {
 
 Future<void> handle(HttpRequest request) async {
   var websocketRequest = false;
+  var streamingRequest = false;
   try {
     // Browser pages cannot call the helper; no CORS or generic proxy endpoint.
     if (request.headers.value('origin') != null) {
@@ -146,6 +147,7 @@ Future<void> handle(HttpRequest request) async {
       final quality = int.parse(path[2]);
       final line = int.parse(path[3]);
       if (quality < 0 || quality >= s.qualities.length || line < 0) throw ArgumentError('Invalid stream');
+      streamingRequest = true;
       final heartbeat = Timer.periodic(const Duration(seconds: 10), (_) { lastActivity = DateTime.now(); });
       try { await serveDouyuStream(request, s.site, s.detail, s.qualities[quality], line); }
       finally { heartbeat.cancel(); }
@@ -164,8 +166,9 @@ Future<void> handle(HttpRequest request) async {
       request.response.write(jsonEncode({'result': result}));
     } else { request.response.statusCode = 404; }
   } catch (e) {
+    if (streamingRequest) return; // A player that closed its input needs no JSON response.
     request.response.statusCode = 502;
     // Deliberately omit network exception bodies, which may contain cookies or signed URLs.
     request.response.write(jsonEncode({'error': 'Simple Live request failed (${e.runtimeType})'}));
-  } finally { if (!websocketRequest) await request.response.close(); }
+  } finally { if (!websocketRequest && !streamingRequest) await request.response.close(); }
 }
