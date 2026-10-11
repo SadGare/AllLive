@@ -791,7 +791,8 @@ namespace AllLive.UWP.Views
                     return;
                 }
                 if (manualSidebarWidth && ColumnRight.MinWidth > 0)
-                    SettingHelper.SetValue<double>(SettingHelper.RIGHT_DETAIL_WIDTH, args.NewSize.Width + 16);
+                    SettingHelper.SetValue<double>(SettingHelper.RIGHT_DETAIL_WIDTH,
+                        args.NewSize.Width + GridRight.Margin.Left + GridRight.Margin.Right);
                 ScheduleLayoutFit();
             });
             //软解视频
