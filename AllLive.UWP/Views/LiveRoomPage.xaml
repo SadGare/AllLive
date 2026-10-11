@@ -1165,10 +1165,12 @@
                 GripperCursor="Default"
                 ResizeBehavior="BasedOnAlignment"
                 ResizeDirection="Auto">
-                <!--<controls:GridSplitter.RenderTransform>
-                <TranslateTransform X="-4" />
-            </controls:GridSplitter.RenderTransform>-->
-
+                <controls:GridSplitter.Template>
+                    <ControlTemplate TargetType="controls:GridSplitter">
+                        <!-- Keep the drag hit area without the toolkit's grip or state backgrounds. -->
+                        <Grid Background="Transparent" />
+                    </ControlTemplate>
+                </controls:GridSplitter.Template>
             </controls:GridSplitter>
             <ProgressRing
                 Grid.ColumnSpan="2"
