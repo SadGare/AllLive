@@ -66,11 +66,11 @@
         </Grid>
         <Grid x:Name="GridContent" Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition />
+                <ColumnDefinition x:Name="ColumnVideo" />
                 <ColumnDefinition
                     x:Name="ColumnRight"
                     Width="280"
-                    MinWidth="100" />
+                    MinWidth="180" />
             </Grid.ColumnDefinitions>
             <Button
                 x:Name="BtnFoucs"
@@ -1145,6 +1145,11 @@
             </Grid>
 
             <controls:GridSplitter
+                x:Name="SidebarSplitter"
+                ManipulationStarted="SidebarSplitter_ManipulationStarted"
+                KeyDown="SidebarSplitter_KeyDown"
+                DoubleTapped="SidebarSplitter_DoubleTapped"
+                ToolTipService.ToolTip="拖动调整侧栏，双击恢复自动适配"
                 Grid.Column="1"
                 Width="8"
                 MinWidth="8"

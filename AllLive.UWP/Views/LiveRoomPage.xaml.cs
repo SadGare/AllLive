@@ -62,6 +62,7 @@ namespace AllLive.UWP.Views
         private Task playerLoadTask = Task.CompletedTask;
         private readonly DispatcherTimer layoutTimer;
         private bool stopped;
+        private bool manualSidebarWidth;
 
         public LiveRoomPage()
         {
@@ -70,9 +71,9 @@ namespace AllLive.UWP.Views
             layoutTimer.Tick += (sender, args) =>
             {
                 layoutTimer.Stop();
-                FitLiveWindow();
+                FitLiveLayout();
             };
-            GridContent.SizeChanged += (sender, args) => ScheduleWindowFit();
+            GridContent.SizeChanged += (sender, args) => ScheduleLayoutFit();
 
             settingVM = new SettingVM();
             liveRoomVM = new LiveRoomVM(settingVM);
@@ -251,42 +252,57 @@ namespace AllLive.UWP.Views
                 dispRequest.RequestActive();
                 PlayerLoading.Visibility = Visibility.Collapsed;
                 SetMediaInfo();
-                ScheduleWindowFit();
+                ScheduleLayoutFit();
             });
         }
 
         private async void PlaybackSession_NaturalVideoSizeChanged(MediaPlaybackSession sender, object args)
         {
-            await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, ScheduleWindowFit);
+            await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, ScheduleLayoutFit);
         }
 
-        private void ScheduleWindowFit()
+        private void ScheduleLayoutFit()
         {
             if (stopped) return;
             layoutTimer.Stop();
             layoutTimer.Start();
         }
 
-        private void FitLiveWindow()
+        private void FitLiveLayout()
         {
-            var view = ApplicationView.GetForCurrentView();
             var session = mediaPlayer.PlaybackSession;
-            if (stopped || isMini || view.IsFullScreenMode ||
-                (view.AdjacentToLeftDisplayEdge && view.AdjacentToRightDisplayEdge) ||
-                ColumnRight.Width.Value <= 0 ||
+            if (stopped || manualSidebarWidth || isMini || ColumnRight.Width.Value <= 0 ||
                 session.NaturalVideoWidth == 0 || session.NaturalVideoHeight == 0 ||
-                GridContent.ActualHeight <= 0) return;
+                GridContent.ActualHeight <= 0 || GridContent.ActualWidth <= 0) return;
 
-            // Keep the current height and the user's sidebar width. Let Uniform
-            // letterbox naturally if Windows cannot grant the requested width.
-            var bounds = Window.Current.Bounds;
-            var chromeWidth = bounds.Width - GridContent.ActualWidth;
-            var width = GridContent.ActualHeight * session.NaturalVideoWidth /
-                session.NaturalVideoHeight + ColumnRight.ActualWidth + chromeWidth;
-            var display = DisplayInformation.GetForCurrentView();
-            width = Math.Min(width, display.ScreenWidthInRawPixels / display.RawPixelsPerViewPixel);
-            if (width > 0 && Math.Abs(width - bounds.Width) > 1)
-                view.TryResizeView(new Size(width, bounds.Height));
+            // Allocate the video's height-derived width first; the sidebar gets
+            // the remainder. A narrow window keeps the sidebar usable and lets
+            // Uniform preserve the picture without cropping or stretching.
+            var videoWidth = GridContent.ActualHeight * session.NaturalVideoWidth /
+                session.NaturalVideoHeight;
+            var sidebarWidth = Math.Max(ColumnRight.MinWidth,
+                Math.Min(GridContent.ActualWidth - videoWidth, GridContent.ActualWidth - 240));
+            ColumnVideo.Width = new GridLength(1, GridUnitType.Star);
+            if (Math.Abs(sidebarWidth - ColumnRight.ActualWidth) > 1)
+                ColumnRight.Width = new GridLength(sidebarWidth, GridUnitType.Pixel);
+        }
+
+        private void SidebarSplitter_ManipulationStarted(object sender, ManipulationStartedRoutedEventArgs e)
+        {
+            manualSidebarWidth = true;
+        }
+
+        private void SidebarSplitter_KeyDown(object sender, KeyRoutedEventArgs e)
+        {
+            if (e.Key == Windows.System.VirtualKey.Left || e.Key == Windows.System.VirtualKey.Right)
+                manualSidebarWidth = true;
+        }
+
+        private void SidebarSplitter_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
+        {
+            manualSidebarWidth = false;
+            ScheduleLayoutFit();
+            e.Handled = true;
         }
 
         private async void PlaybackSession_PlaybackStateChanged(MediaPlaybackSession sender, object args)
@@ -749,8 +765,9 @@ namespace AllLive.UWP.Views
                 {
                     return;
                 }
-                SettingHelper.SetValue<double>(SettingHelper.RIGHT_DETAIL_WIDTH, args.NewSize.Width + 16);
-                ScheduleWindowFit();
+                if (manualSidebarWidth && ColumnRight.MinWidth > 0)
+                    SettingHelper.SetValue<double>(SettingHelper.RIGHT_DETAIL_WIDTH, args.NewSize.Width + 16);
+                ScheduleLayoutFit();
             });
             //软解视频
             //cbDecode.SelectedIndex= SettingHelper.GetValue<int>(SettingHelper.DECODE, 0);
@@ -1312,7 +1329,7 @@ namespace AllLive.UWP.Views
                 PlayBtnFullWindow.Visibility = Visibility.Visible;
                 PlayBtnExitFullWindow.Visibility = Visibility.Collapsed;
                 ColumnRight.Width = new GridLength(SettingHelper.GetValue<double>(SettingHelper.RIGHT_DETAIL_WIDTH, 280), GridUnitType.Pixel);
-                ColumnRight.MinWidth = 100;
+                ColumnRight.MinWidth = 180;
             }
         }
         private void SetFullScreen(bool e)
@@ -1341,7 +1358,7 @@ namespace AllLive.UWP.Views
                 var width = SettingHelper.GetValue<double>(SettingHelper.RIGHT_DETAIL_WIDTH, 280);
                 ColumnRight.Width = new GridLength(width, GridUnitType.Pixel);
                 //ColumnRight.Width = new GridLength(280, GridUnitType.Pixel);
-                ColumnRight.MinWidth = 100;
+                ColumnRight.MinWidth = 180;
                 //退出全屏
                 if (view.IsFullScreenMode)
                 {
