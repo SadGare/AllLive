@@ -1147,7 +1147,6 @@
             <controls:GridSplitter
                 x:Name="SidebarSplitter"
                 ManipulationStarted="SidebarSplitter_ManipulationStarted"
-                KeyDown="SidebarSplitter_KeyDown"
                 DoubleTapped="SidebarSplitter_DoubleTapped"
                 ToolTipService.ToolTip="拖动调整侧栏，双击恢复自动适配"
                 Grid.Column="1"

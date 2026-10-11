@@ -74,6 +74,7 @@ namespace AllLive.UWP.Views
                 FitLiveLayout();
             };
             GridContent.SizeChanged += (sender, args) => ScheduleLayoutFit();
+            SidebarSplitter.AddHandler(KeyDownEvent, new KeyEventHandler(SidebarSplitter_KeyDown), true);
 
             settingVM = new SettingVM();
             liveRoomVM = new LiveRoomVM(settingVM);
@@ -607,6 +608,7 @@ namespace AllLive.UWP.Views
         {
             stopped = true;
             layoutTimer.Stop();
+            mediaPlayer.PlaybackSession.NaturalVideoSizeChanged -= PlaybackSession_NaturalVideoSizeChanged;
             mediaPlayer.CommandManager.PlayReceived -= CommandManager_PlayReceived;
             if (mediaPlayer != null)
             {
@@ -1316,6 +1318,7 @@ namespace AllLive.UWP.Views
         }
         private void SetFullWindow(bool e)
         {
+            ColumnVideo.Width = new GridLength(1, GridUnitType.Star);
 
             if (e)
             {
@@ -1334,6 +1337,7 @@ namespace AllLive.UWP.Views
         }
         private void SetFullScreen(bool e)
         {
+            ColumnVideo.Width = new GridLength(1, GridUnitType.Star);
             ApplicationView view = ApplicationView.GetForCurrentView();
             HideTitleBar(e);
             if (e)
