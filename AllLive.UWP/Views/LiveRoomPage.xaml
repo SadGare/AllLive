@@ -387,6 +387,8 @@
 
                 </SplitView.Pane>
                 <Grid
+                    x:Name="PlaybackSurface"
+                    SizeChanged="PlaybackSurface_SizeChanged"
                     ui:UIElementExtensions.ClipToBounds="True"
                     Background="Black"
                     DoubleTapped="Grid_DoubleTapped"

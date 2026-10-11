@@ -275,10 +275,26 @@ namespace AllLive.UWP.Views
 
         private void FitLiveLayout()
         {
-            var session = mediaPlayer.PlaybackSession;
+            FitVideoSurface();
             if (stopped || manualSidebarWidth || isMini || ColumnRight.Width.Value <= 0 ||
                 GridContent.ActualHeight <= 0 || GridContent.ActualWidth <= 0) return;
 
+            var source = GetVideoSourceSize();
+            if (source.Width <= 0 || source.Height <= 0) return;
+
+            // Reserve the video's visible width; the sidebar receives the remainder.
+            var videoWidth = GridContent.ActualHeight * (source.Width - RightVideoCropPixels(source)) /
+                source.Height;
+            var sidebarWidth = Math.Max(ColumnRight.MinWidth,
+                Math.Min(GridContent.ActualWidth - videoWidth, GridContent.ActualWidth - 240));
+            ColumnVideo.Width = new GridLength(1, GridUnitType.Star);
+            if (Math.Abs(sidebarWidth - ColumnRight.ActualWidth) > 1)
+                ColumnRight.Width = new GridLength(sidebarWidth, GridUnitType.Pixel);
+        }
+
+        private Size GetVideoSourceSize()
+        {
+            var session = mediaPlayer.PlaybackSession;
             double sourceWidth = session.NaturalVideoWidth;
             double sourceHeight = session.NaturalVideoHeight;
             if (sourceWidth <= 0 || sourceHeight <= 0)
@@ -287,17 +303,41 @@ namespace AllLive.UWP.Views
                 sourceWidth = stream?.PixelWidth ?? 0;
                 sourceHeight = stream?.PixelHeight ?? 0;
             }
-            if (sourceWidth <= 0 || sourceHeight <= 0) return;
+            return new Size(sourceWidth, sourceHeight);
+        }
 
-            // Allocate the video's height-derived width first; the sidebar gets
-            // the remainder. A narrow window keeps the sidebar usable and lets
-            // Uniform preserve the picture without cropping or stretching.
-            var videoWidth = GridContent.ActualHeight * sourceWidth / sourceHeight;
-            var sidebarWidth = Math.Max(ColumnRight.MinWidth,
-                Math.Min(GridContent.ActualWidth - videoWidth, GridContent.ActualWidth - 240));
-            ColumnVideo.Width = new GridLength(1, GridUnitType.Star);
-            if (Math.Abs(sidebarWidth - ColumnRight.ActualWidth) > 1)
-                ColumnRight.Width = new GridLength(sidebarWidth, GridUnitType.Pixel);
+        private int RightVideoCropPixels(Size source)
+        {
+            var pixels = SettingHelper.GetValue<int>(
+                $"PlayerRightCropPixels:{liveRoomVM.SiteName}:{liveRoomVM.RoomID}", 0);
+            return Math.Max(0, Math.Min(pixels, (int)source.Width - 1));
+        }
+
+        private void PlaybackSurface_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            FitVideoSurface();
+        }
+
+        private void FitVideoSurface()
+        {
+            if (stopped || mediaPlayer == null || liveRoomVM == null) return;
+            var source = GetVideoSourceSize();
+            if (source.Width <= 0 || source.Height <= 0) return;
+            var crop = RightVideoCropPixels(source);
+            mediaPlayer.PlaybackSession.NormalizedSourceRect =
+                new Rect(0, 0, (source.Width - crop) / source.Width, 1);
+            if (crop == 0)
+            {
+                player.Width = player.Height = double.NaN;
+                player.Stretch = Stretch.Uniform;
+                return;
+            }
+            if (PlaybackSurface.ActualWidth <= 0 || PlaybackSurface.ActualHeight <= 0) return;
+            var aspect = (source.Width - crop) / source.Height;
+            player.Width = Math.Min(PlaybackSurface.ActualWidth, PlaybackSurface.ActualHeight * aspect);
+            player.Height = player.Width / aspect;
+            // Size to the cropped frame's aspect before filling, so pixels are not stretched.
+            player.Stretch = Stretch.Fill;
         }
 
         private void RoomInfo_SizeChanged(object sender, SizeChangedEventArgs e)
