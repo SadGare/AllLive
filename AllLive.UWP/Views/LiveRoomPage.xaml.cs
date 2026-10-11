@@ -73,7 +73,11 @@ namespace AllLive.UWP.Views
                 layoutTimer.Stop();
                 FitLiveLayout();
             };
-            GridContent.SizeChanged += (sender, args) => ScheduleLayoutFit();
+            GridContent.SizeChanged += (sender, args) =>
+            {
+                manualSidebarWidth = false;
+                ScheduleLayoutFit();
+            };
             SidebarSplitter.AddHandler(KeyDownEvent, new KeyEventHandler(SidebarSplitter_KeyDown), true);
 
             settingVM = new SettingVM();
@@ -273,14 +277,22 @@ namespace AllLive.UWP.Views
         {
             var session = mediaPlayer.PlaybackSession;
             if (stopped || manualSidebarWidth || isMini || ColumnRight.Width.Value <= 0 ||
-                session.NaturalVideoWidth == 0 || session.NaturalVideoHeight == 0 ||
                 GridContent.ActualHeight <= 0 || GridContent.ActualWidth <= 0) return;
+
+            double sourceWidth = session.NaturalVideoWidth;
+            double sourceHeight = session.NaturalVideoHeight;
+            if (sourceWidth <= 0 || sourceHeight <= 0)
+            {
+                var stream = interopMSS?.CurrentVideoStream;
+                sourceWidth = stream?.PixelWidth ?? 0;
+                sourceHeight = stream?.PixelHeight ?? 0;
+            }
+            if (sourceWidth <= 0 || sourceHeight <= 0) return;
 
             // Allocate the video's height-derived width first; the sidebar gets
             // the remainder. A narrow window keeps the sidebar usable and lets
             // Uniform preserve the picture without cropping or stretching.
-            var videoWidth = GridContent.ActualHeight * session.NaturalVideoWidth /
-                session.NaturalVideoHeight;
+            var videoWidth = GridContent.ActualHeight * sourceWidth / sourceHeight;
             var sidebarWidth = Math.Max(ColumnRight.MinWidth,
                 Math.Min(GridContent.ActualWidth - videoWidth, GridContent.ActualWidth - 240));
             ColumnVideo.Width = new GridLength(1, GridUnitType.Star);
@@ -298,9 +310,10 @@ namespace AllLive.UWP.Views
             ((Grid)sender).Padding = new Thickness(compact ? 4 : 8);
         }
 
-        private void SidebarSplitter_ManipulationStarted(object sender, ManipulationStartedRoutedEventArgs e)
+        private void SidebarSplitter_ManipulationDelta(object sender, ManipulationDeltaRoutedEventArgs e)
         {
-            manualSidebarWidth = true;
+            if (Math.Abs(e.Delta.Translation.X) > 0)
+                manualSidebarWidth = true;
         }
 
         private void SidebarSplitter_KeyDown(object sender, KeyRoutedEventArgs e)
@@ -1343,6 +1356,7 @@ namespace AllLive.UWP.Views
                 PlayBtnExitFullWindow.Visibility = Visibility.Collapsed;
                 ColumnRight.Width = new GridLength(SettingHelper.GetValue<double>(SettingHelper.RIGHT_DETAIL_WIDTH, 280), GridUnitType.Pixel);
                 ColumnRight.MinWidth = 100;
+                ScheduleLayoutFit();
             }
         }
         private void SetFullScreen(bool e)
@@ -1378,6 +1392,7 @@ namespace AllLive.UWP.Views
                 {
                     view.ExitFullScreenMode();
                 }
+                ScheduleLayoutFit();
             }
         }
         private async void MiniWidnows(bool mini)
