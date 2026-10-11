@@ -60,10 +60,19 @@ namespace AllLive.UWP.Views
         private int volumeFeedbackVersion;
         private bool resumingLive;
         private Task playerLoadTask = Task.CompletedTask;
+        private readonly DispatcherTimer layoutTimer;
+        private bool stopped;
 
         public LiveRoomPage()
         {
             this.InitializeComponent();
+            layoutTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(150) };
+            layoutTimer.Tick += (sender, args) =>
+            {
+                layoutTimer.Stop();
+                FitLiveWindow();
+            };
+            GridContent.SizeChanged += (sender, args) => ScheduleWindowFit();
 
             settingVM = new SettingVM();
             liveRoomVM = new LiveRoomVM(settingVM);
@@ -85,6 +94,7 @@ namespace AllLive.UWP.Views
             mediaPlayer.PlaybackSession.BufferingProgressChanged += PlaybackSession_BufferingProgressChanged;
             mediaPlayer.PlaybackSession.BufferingEnded += PlaybackSession_BufferingEnded;
             mediaPlayer.MediaOpened += MediaPlayer_MediaOpened;
+            mediaPlayer.PlaybackSession.NaturalVideoSizeChanged += PlaybackSession_NaturalVideoSizeChanged;
             mediaPlayer.MediaEnded += MediaPlayer_MediaEnded;
             mediaPlayer.MediaFailed += MediaPlayer_MediaFailed;
             mediaPlayer.CommandManager.PlayReceived += CommandManager_PlayReceived;
@@ -241,7 +251,42 @@ namespace AllLive.UWP.Views
                 dispRequest.RequestActive();
                 PlayerLoading.Visibility = Visibility.Collapsed;
                 SetMediaInfo();
+                ScheduleWindowFit();
             });
+        }
+
+        private async void PlaybackSession_NaturalVideoSizeChanged(MediaPlaybackSession sender, object args)
+        {
+            await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, ScheduleWindowFit);
+        }
+
+        private void ScheduleWindowFit()
+        {
+            if (stopped) return;
+            layoutTimer.Stop();
+            layoutTimer.Start();
+        }
+
+        private void FitLiveWindow()
+        {
+            var view = ApplicationView.GetForCurrentView();
+            var session = mediaPlayer.PlaybackSession;
+            if (stopped || isMini || view.IsFullScreenMode ||
+                (view.AdjacentToLeftDisplayEdge && view.AdjacentToRightDisplayEdge) ||
+                ColumnRight.Width.Value <= 0 ||
+                session.NaturalVideoWidth == 0 || session.NaturalVideoHeight == 0 ||
+                GridContent.ActualHeight <= 0) return;
+
+            // Keep the current height and the user's sidebar width. Let Uniform
+            // letterbox naturally if Windows cannot grant the requested width.
+            var bounds = Window.Current.Bounds;
+            var chromeWidth = bounds.Width - GridContent.ActualWidth;
+            var width = GridContent.ActualHeight * session.NaturalVideoWidth /
+                session.NaturalVideoHeight + ColumnRight.ActualWidth + chromeWidth;
+            var display = DisplayInformation.GetForCurrentView();
+            width = Math.Min(width, display.ScreenWidthInRawPixels / display.RawPixelsPerViewPixel);
+            if (width > 0 && Math.Abs(width - bounds.Width) > 1)
+                view.TryResizeView(new Size(width, bounds.Height));
         }
 
         private async void PlaybackSession_PlaybackStateChanged(MediaPlaybackSession sender, object args)
@@ -417,7 +462,7 @@ namespace AllLive.UWP.Views
                     break;
                 case Windows.System.VirtualKey.GamepadLeftTrigger:
                     //刷新直播间
-                    BottomBtnRefresh_Click(this, null);
+                    PlayBtnRefresh_Click(this, null);
                     break;
                 case Windows.System.VirtualKey.GamepadB:
                     //退出直播间
@@ -544,6 +589,8 @@ namespace AllLive.UWP.Views
 
         private void StopPlay()
         {
+            stopped = true;
+            layoutTimer.Stop();
             mediaPlayer.CommandManager.PlayReceived -= CommandManager_PlayReceived;
             if (mediaPlayer != null)
             {
@@ -703,6 +750,7 @@ namespace AllLive.UWP.Views
                     return;
                 }
                 SettingHelper.SetValue<double>(SettingHelper.RIGHT_DETAIL_WIDTH, args.NewSize.Width + 16);
+                ScheduleWindowFit();
             });
             //软解视频
             //cbDecode.SelectedIndex= SettingHelper.GetValue<int>(SettingHelper.DECODE, 0);
@@ -1258,7 +1306,6 @@ namespace AllLive.UWP.Views
                 PlayBtnExitFullWindow.Visibility = Visibility.Visible;
                 ColumnRight.Width = new GridLength(0, GridUnitType.Pixel);
                 ColumnRight.MinWidth = 0;
-                BottomInfo.Height = new GridLength(0, GridUnitType.Pixel);
             }
             else
             {
@@ -1266,7 +1313,6 @@ namespace AllLive.UWP.Views
                 PlayBtnExitFullWindow.Visibility = Visibility.Collapsed;
                 ColumnRight.Width = new GridLength(SettingHelper.GetValue<double>(SettingHelper.RIGHT_DETAIL_WIDTH, 280), GridUnitType.Pixel);
                 ColumnRight.MinWidth = 100;
-                BottomInfo.Height = GridLength.Auto;
             }
         }
         private void SetFullScreen(bool e)
@@ -1282,7 +1328,6 @@ namespace AllLive.UWP.Views
                 ColumnRight.Width = new GridLength(0, GridUnitType.Pixel);
                 ColumnRight.MinWidth = 0;
 
-                BottomInfo.Height = new GridLength(0, GridUnitType.Pixel);
                 //全屏
                 if (!view.IsFullScreenMode)
                 {
@@ -1297,7 +1342,6 @@ namespace AllLive.UWP.Views
                 ColumnRight.Width = new GridLength(width, GridUnitType.Pixel);
                 //ColumnRight.Width = new GridLength(280, GridUnitType.Pixel);
                 ColumnRight.MinWidth = 100;
-                BottomInfo.Height = GridLength.Auto;
                 //退出全屏
                 if (view.IsFullScreenMode)
                 {
@@ -1403,36 +1447,7 @@ namespace AllLive.UWP.Views
 
         #endregion
 
-        private void BottomBtnShare_Click(object sender, RoutedEventArgs e)
-        {
-            if (liveRoomVM.detail == null)
-            {
-                return;
-            }
-            Utils.SetClipboard(liveRoomVM.detail.Url);
-            Utils.ShowMessageToast("已复制链接到剪切板");
-        }
-
-        private async void BottomBtnOpenBrowser_Click(object sender, RoutedEventArgs e)
-        {
-            if (liveRoomVM.detail == null)
-            {
-                return;
-            }
-            await Windows.System.Launcher.LaunchUriAsync(new Uri(liveRoomVM.detail.Url));
-        }
-
-        private void BottomBtnPlayUrl_Click(object sender, RoutedEventArgs e)
-        {
-            if (liveRoomVM.CurrentLine == null)
-            {
-                return;
-            }
-            Utils.SetClipboard(liveRoomVM.CurrentLine.Url);
-            Utils.ShowMessageToast("已复制链接到剪切板");
-        }
-
-        private void BottomBtnRefresh_Click(object sender, RoutedEventArgs e)
+        private void PlayBtnRefresh_Click(object sender, RoutedEventArgs e)
         {
             if (liveRoomVM.Loading) return;
             if (mediaPlayer != null)

@@ -65,10 +65,6 @@
             </Grid>
         </Grid>
         <Grid x:Name="GridContent" Grid.Row="1">
-            <Grid.RowDefinitions>
-                <RowDefinition />
-                <RowDefinition x:Name="BottomInfo" Height="Auto" />
-            </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition />
                 <ColumnDefinition
@@ -412,7 +408,7 @@
                                 TextWrapping="Wrap" />
                         </Flyout>
                     </Grid.ContextFlyout>
-                    <MediaPlayerElement x:Name="player" />
+                    <MediaPlayerElement x:Name="player" Stretch="Uniform" />
                     <!--  弹幕  -->
                     <Grid Tapped="Grid_Tapped">
                         <controls1:Danmaku x:Name="DanmuControl" />
@@ -465,6 +461,21 @@
                     <Grid x:Name="control">
 
                         <Grid x:Name="StandardControl">
+                            <StackPanel HorizontalAlignment="Right" VerticalAlignment="Top"
+                                        Margin="8" Orientation="Horizontal" Background="#99000000">
+                                <Button x:Name="PlayTopBtnScreenshot" Width="40" Height="40"
+                                        Background="Transparent" BorderThickness="0"
+                                        AutomationProperties.Name="截图" ToolTipService.ToolTip="截图"
+                                        Click="PlayTopBtnScreenshot_Click">
+                                    <FontIcon FontFamily="{StaticResource SegoeFluent}" Glyph="&#xE722;" />
+                                </Button>
+                                <Button x:Name="PlayBtnRefresh" Width="40" Height="40"
+                                        Background="Transparent" BorderThickness="0"
+                                        AutomationProperties.Name="刷新" ToolTipService.ToolTip="刷新（F5）"
+                                        Click="PlayBtnRefresh_Click">
+                                    <FontIcon FontFamily="{StaticResource SegoeFluent}" Glyph="&#xE72C;" />
+                                </Button>
+                            </StackPanel>
                             <Grid Height="48" VerticalAlignment="Bottom">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto" />
@@ -868,79 +879,8 @@
                 </Grid>
             </SplitView>
 
-            <Grid Grid.Row="1" Background="{ThemeResource NavigationViewTopPaneBackground}">
-                <CommandBar HorizontalAlignment="Left" DefaultLabelPosition="Right">
-                    <AppBarButton
-                        x:Name="PlayTopBtnScreenshot"
-                        BorderThickness="0"
-                        Click="PlayTopBtnScreenshot_Click"
-                        Label="截图">
-                        <AppBarButton.Icon>
-                            <FontIcon FontFamily="{StaticResource SegoeFluent}" Glyph="&#xE722;" />
-                        </AppBarButton.Icon>
-                    </AppBarButton>
-                    <AppBarButton
-                        x:Name="BottomBtnAddFavorite"
-                        Command="{x:Bind Path=liveRoomVM.AddFavoriteCommand}"
-                        Label="关注"
-                        Visibility="{x:Bind Path=liveRoomVM.IsFavorite, Mode=OneWay, Converter={StaticResource displayConvert}}">
-                        <AppBarButton.Icon>
-                            <FontIcon FontFamily="{StaticResource SegoeFluent}" Glyph="&#xEB51;" />
-                        </AppBarButton.Icon>
-                    </AppBarButton>
-                    <AppBarButton
-                        x:Name="BottomBtnRemoveFavorite"
-                        Command="{x:Bind Path=liveRoomVM.RemoveFavoriteCommand}"
-                        Label="已关注"
-                        Visibility="{x:Bind Path=liveRoomVM.IsFavorite, Mode=OneWay}">
-                        <AppBarButton.Icon>
-                            <FontIcon FontFamily="{StaticResource SegoeFluent}" Glyph="&#xEB52;" />
-                        </AppBarButton.Icon>
-                    </AppBarButton>
-                    <AppBarButton
-                        x:Name="BottomBtnRefresh"
-                        Click="BottomBtnRefresh_Click"
-                        Label="刷新">
-                        <AppBarButton.Icon>
-                            <FontIcon FontFamily="{StaticResource SegoeFluent}" Glyph="&#xE72C;" />
-                        </AppBarButton.Icon>
-                    </AppBarButton>
-                </CommandBar>
-                <!--<StackPanel HorizontalAlignment="Left" Orientation="Horizontal">
-
-                </StackPanel>-->
-                <CommandBar HorizontalAlignment="Right" DefaultLabelPosition="Right">
-
-                    <AppBarButton
-                        x:Name="BottomBtnShare"
-                        Click="BottomBtnShare_Click"
-                        Label="分享">
-                        <AppBarButton.Icon>
-                            <FontIcon FontFamily="{StaticResource SegoeFluent}" Glyph="&#xE72D;" />
-                        </AppBarButton.Icon>
-                    </AppBarButton>
-                    <AppBarButton
-                        x:Name="BottomBtnOpenBrowser"
-                        Click="BottomBtnOpenBrowser_Click"
-                        Label="浏览器">
-                        <AppBarButton.Icon>
-                            <FontIcon FontFamily="{StaticResource SegoeFluent}" Glyph="&#xEB41;" />
-                        </AppBarButton.Icon>
-                    </AppBarButton>
-                    <AppBarButton
-                        x:Name="BottomBtnPlayUrl"
-                        Click="BottomBtnPlayUrl_Click"
-                        Label="直链">
-                        <AppBarButton.Icon>
-                            <FontIcon FontFamily="{StaticResource SegoeFluent}" Glyph="&#xE167;" />
-                        </AppBarButton.Icon>
-                    </AppBarButton>
-                </CommandBar>
-            </Grid>
-
             <Grid
                 x:Name="GridRight"
-                Grid.RowSpan="2"
                 Grid.Column="1"
                 Margin="8,0">
                 <Grid.RowDefinitions>
@@ -985,18 +925,26 @@
                                 Text="{x:Bind Path=liveRoomVM.SiteName, Mode=OneWay}" />
                         </StackPanel>
                     </StackPanel>
-                    <StackPanel Grid.Column="2" Orientation="Horizontal">
-                        <Viewbox Width="14" VerticalAlignment="Center">
-                            <PathIcon Data="{StaticResource ResourceKey=IconHot}" Foreground="Orange" />
-                        </Viewbox>
-
-                        <TextBlock
-                            Margin="4,0,0,0"
-                            VerticalAlignment="Center"
-                            FontSize="13"
-                            Opacity=".6"
-                            Text="{x:Bind Path=liveRoomVM.Online, Mode=OneWay, Converter={StaticResource numberToStringConvert}}" />
-                    </StackPanel>
+                    <Grid Grid.Column="2" Margin="8,0,0,0" VerticalAlignment="Center">
+                        <Button x:Name="RoomBtnAddFavorite" Padding="8,6"
+                                Command="{x:Bind Path=liveRoomVM.AddFavoriteCommand}"
+                                AutomationProperties.Name="关注" ToolTipService.ToolTip="关注主播"
+                                Visibility="{x:Bind Path=liveRoomVM.IsFavorite, Mode=OneWay, Converter={StaticResource displayConvert}}">
+                            <StackPanel Orientation="Horizontal">
+                                <FontIcon FontFamily="{StaticResource SegoeFluent}" Glyph="&#xEB51;" FontSize="16" />
+                                <TextBlock Text="关注" Margin="4,0,0,0" FontSize="12" />
+                            </StackPanel>
+                        </Button>
+                        <Button x:Name="RoomBtnRemoveFavorite" Padding="8,6"
+                                Command="{x:Bind Path=liveRoomVM.RemoveFavoriteCommand}"
+                                AutomationProperties.Name="已关注" ToolTipService.ToolTip="取消关注"
+                                Visibility="{x:Bind Path=liveRoomVM.IsFavorite, Mode=OneWay}">
+                            <StackPanel Orientation="Horizontal">
+                                <FontIcon FontFamily="{StaticResource SegoeFluent}" Glyph="&#xEB52;" FontSize="16" />
+                                <TextBlock Text="已关注" Margin="4,0,0,0" FontSize="12" />
+                            </StackPanel>
+                        </Button>
+                    </Grid>
                 </Grid>
                 <Grid
                     Grid.Row="1"
@@ -1197,7 +1145,6 @@
             </Grid>
 
             <controls:GridSplitter
-                Grid.RowSpan="2"
                 Grid.Column="1"
                 Width="8"
                 MinWidth="8"

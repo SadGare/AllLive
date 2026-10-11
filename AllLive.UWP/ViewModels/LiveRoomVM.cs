@@ -363,7 +363,8 @@ namespace AllLive.UWP.ViewModels
                 SiteName = Site.Name,
                 UserName = Name
             });
-            IsFavorite = true;
+            FavoriteID = DatabaseHelper.CheckFavorite(RoomID, Site.Name);
+            IsFavorite = FavoriteID != null;
             MessageCenter.UpdateFavorite();
         }
         private void RemoveFavorite()
@@ -373,6 +374,7 @@ namespace AllLive.UWP.ViewModels
                 return;
             }
             DatabaseHelper.DeleteFavorite(FavoriteID.Value);
+            FavoriteID = null;
             IsFavorite = false;
             MessageCenter.UpdateFavorite();
         }
