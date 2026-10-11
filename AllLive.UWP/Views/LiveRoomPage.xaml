@@ -410,7 +410,9 @@
                                 TextWrapping="Wrap" />
                         </Flyout>
                     </Grid.ContextFlyout>
-                    <MediaPlayerElement x:Name="player" Stretch="Uniform" />
+                    <Grid x:Name="CropViewport" ui:UIElementExtensions.ClipToBounds="True">
+                        <MediaPlayerElement x:Name="player" Stretch="Uniform" />
+                    </Grid>
                     <!--  弹幕  -->
                     <Grid Tapped="Grid_Tapped">
                         <controls1:Danmaku x:Name="DanmuControl" />

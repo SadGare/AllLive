@@ -324,19 +324,26 @@ namespace AllLive.UWP.Views
             var source = GetVideoSourceSize();
             if (source.Width <= 0 || source.Height <= 0) return;
             var crop = RightVideoCropPixels(source);
-            mediaPlayer.PlaybackSession.NormalizedSourceRect =
-                new Rect(0, 0, (source.Width - crop) / source.Width, 1);
             if (crop == 0)
             {
+                CropViewport.Width = CropViewport.Height = double.NaN;
+                CropViewport.HorizontalAlignment = HorizontalAlignment.Stretch;
+                CropViewport.VerticalAlignment = VerticalAlignment.Stretch;
                 player.Width = player.Height = double.NaN;
+                player.HorizontalAlignment = HorizontalAlignment.Stretch;
                 player.Stretch = Stretch.Uniform;
                 return;
             }
             if (PlaybackSurface.ActualWidth <= 0 || PlaybackSurface.ActualHeight <= 0) return;
             var aspect = (source.Width - crop) / source.Height;
-            player.Width = Math.Min(PlaybackSurface.ActualWidth, PlaybackSurface.ActualHeight * aspect);
-            player.Height = player.Width / aspect;
-            // Size to the cropped frame's aspect before filling, so pixels are not stretched.
+            CropViewport.HorizontalAlignment = HorizontalAlignment.Center;
+            CropViewport.VerticalAlignment = VerticalAlignment.Center;
+            CropViewport.Width = Math.Min(PlaybackSurface.ActualWidth, PlaybackSurface.ActualHeight * aspect);
+            CropViewport.Height = CropViewport.Width / aspect;
+            player.Width = CropViewport.Width * source.Width / (source.Width - crop);
+            player.Height = CropViewport.Height;
+            player.HorizontalAlignment = HorizontalAlignment.Left;
+            // Render at the source aspect and clip only the requested right-edge pixels.
             player.Stretch = Stretch.Fill;
         }
 
