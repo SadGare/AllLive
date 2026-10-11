@@ -293,6 +293,9 @@ namespace AllLive.UWP.Views
             var visibility = e.NewSize.Width < 220 ? Visibility.Collapsed : Visibility.Visible;
             RoomFavoriteLabel.Visibility = visibility;
             RoomUnfavoriteLabel.Visibility = visibility;
+            var compact = e.NewSize.Width < 180;
+            RoomAvatar.Width = RoomAvatar.Height = compact ? 32 : 48;
+            ((Grid)sender).Padding = new Thickness(compact ? 4 : 8);
         }
 
         private void SidebarSplitter_ManipulationStarted(object sender, ManipulationStartedRoutedEventArgs e)
@@ -1339,7 +1342,7 @@ namespace AllLive.UWP.Views
                 PlayBtnFullWindow.Visibility = Visibility.Visible;
                 PlayBtnExitFullWindow.Visibility = Visibility.Collapsed;
                 ColumnRight.Width = new GridLength(SettingHelper.GetValue<double>(SettingHelper.RIGHT_DETAIL_WIDTH, 280), GridUnitType.Pixel);
-                ColumnRight.MinWidth = 180;
+                ColumnRight.MinWidth = 100;
             }
         }
         private void SetFullScreen(bool e)
@@ -1369,7 +1372,7 @@ namespace AllLive.UWP.Views
                 var width = SettingHelper.GetValue<double>(SettingHelper.RIGHT_DETAIL_WIDTH, 280);
                 ColumnRight.Width = new GridLength(width, GridUnitType.Pixel);
                 //ColumnRight.Width = new GridLength(280, GridUnitType.Pixel);
-                ColumnRight.MinWidth = 180;
+                ColumnRight.MinWidth = 100;
                 //退出全屏
                 if (view.IsFullScreenMode)
                 {

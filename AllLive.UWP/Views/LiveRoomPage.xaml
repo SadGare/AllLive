@@ -70,7 +70,7 @@
                 <ColumnDefinition
                     x:Name="ColumnRight"
                     Width="280"
-                    MinWidth="180" />
+                    MinWidth="100" />
             </Grid.ColumnDefinitions>
             <Button
                 x:Name="BtnFoucs"
@@ -900,6 +900,7 @@
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <PersonPicture
+                        x:Name="RoomAvatar"
                         Width="48"
                         Height="48"
                         Background="Blue"
