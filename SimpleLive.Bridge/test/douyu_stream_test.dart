@@ -142,6 +142,51 @@ void main() {
     ]);
     expect(timestamps(r, 9), [100000, 100500, 100501, 101001]);
   });
+  test('audio leading the handover keyframe is retained', () async {
+    final r = await join([
+      [...header, ...tag(1000), ...tag(1490, type: 8), ...tag(1500)],
+      [...header, ...tag(2010, type: 8), ...tag(2000), ...tag(2030, type: 8)],
+    ]);
+    expect(timestamps(r, 8), [1490, 2010, 2030]);
+    expect(timestamps(r, 9), [1000, 1500, 2000]);
+  });
+  test('changed decoder configuration is dated at the handover', () async {
+    final changed = tag(0, config: true)..[16] = 0x66;
+    final r = await join([
+      [...header, ...tag(0, config: true), ...tag(1000)],
+      [...header, ...changed, ...tag(1500)],
+    ]);
+    final configs = r.where((c) => c[0] == 9 && c[12] == 0).toList();
+    expect(configs.length, 2);
+    expect(configs.last[5] << 8 | configs.last[6], 1500);
+  });
+  test('leaving a room cancels active and warming readers', () async {
+    var oldCancelled = false;
+    var newCancelled = false;
+    final warming = StreamController<List<int>>(
+      onCancel: () {
+        newCancelled = true;
+      },
+    );
+    Stream<List<int>> old() async* {
+      try {
+        yield header;
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+        yield tag(1000);
+      } finally {
+        oldCancelled = true;
+      }
+    }
+
+    var opens = 0;
+    await spliceDouyuFlv(
+      () async => ++opens == 1 ? old() : warming.stream,
+      renewAfter: Duration.zero,
+    ).take(2).toList();
+    expect(oldCancelled, true);
+    expect(newCancelled, true);
+    await warming.close();
+  });
   test('truncated media cannot become a corrupt tag', () async {
     await expectLater(
       join([
