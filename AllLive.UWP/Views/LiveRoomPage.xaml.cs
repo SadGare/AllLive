@@ -288,6 +288,13 @@ namespace AllLive.UWP.Views
                 ColumnRight.Width = new GridLength(sidebarWidth, GridUnitType.Pixel);
         }
 
+        private void RoomInfo_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            var visibility = e.NewSize.Width < 220 ? Visibility.Collapsed : Visibility.Visible;
+            RoomFavoriteLabel.Visibility = visibility;
+            RoomUnfavoriteLabel.Visibility = visibility;
+        }
+
         private void SidebarSplitter_ManipulationStarted(object sender, ManipulationStartedRoutedEventArgs e)
         {
             manualSidebarWidth = true;

@@ -888,6 +888,7 @@
                     <RowDefinition />
                 </Grid.RowDefinitions>
                 <Grid
+                    SizeChanged="RoomInfo_SizeChanged"
                     Padding="8"
                     Background="{ThemeResource LayerFillColorDefaultBrush}"
                     BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
@@ -932,7 +933,7 @@
                                 Visibility="{x:Bind Path=liveRoomVM.IsFavorite, Mode=OneWay, Converter={StaticResource displayConvert}}">
                             <StackPanel Orientation="Horizontal">
                                 <FontIcon FontFamily="{StaticResource SegoeFluent}" Glyph="&#xEB51;" FontSize="16" />
-                                <TextBlock Text="关注" Margin="4,0,0,0" FontSize="12" />
+                                <TextBlock x:Name="RoomFavoriteLabel" Text="关注" Margin="4,0,0,0" FontSize="12" />
                             </StackPanel>
                         </Button>
                         <Button x:Name="RoomBtnRemoveFavorite" Padding="8,6"
@@ -941,7 +942,7 @@
                                 Visibility="{x:Bind Path=liveRoomVM.IsFavorite, Mode=OneWay}">
                             <StackPanel Orientation="Horizontal">
                                 <FontIcon FontFamily="{StaticResource SegoeFluent}" Glyph="&#xEB52;" FontSize="16" />
-                                <TextBlock Text="已关注" Margin="4,0,0,0" FontSize="12" />
+                                <TextBlock x:Name="RoomUnfavoriteLabel" Text="已关注" Margin="4,0,0,0" FontSize="12" />
                             </StackPanel>
                         </Button>
                     </Grid>
