@@ -882,7 +882,7 @@
             <Grid
                 x:Name="GridRight"
                 Grid.Column="1"
-                Margin="8,0">
+                Margin="0,0,8,0">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition />
@@ -1154,6 +1154,7 @@
                 Grid.Column="1"
                 Width="8"
                 MinWidth="8"
+                Margin="-4,0,0,0"
                 HorizontalAlignment="Left"
                 Background="Transparent"
                 CursorBehavior="ChangeOnSplitterHover"
