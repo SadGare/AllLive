@@ -465,21 +465,34 @@
                     <Grid x:Name="control">
 
                         <Grid x:Name="StandardControl">
-                            <StackPanel HorizontalAlignment="Right" VerticalAlignment="Top"
-                                        Margin="8" Orientation="Horizontal" Background="#99000000">
-                                <Button x:Name="PlayTopBtnScreenshot" Width="40" Height="40"
-                                        Background="Transparent" BorderThickness="0"
-                                        AutomationProperties.Name="截图" ToolTipService.ToolTip="截图"
-                                        Click="PlayTopBtnScreenshot_Click">
-                                    <FontIcon FontFamily="{StaticResource SegoeFluent}" Glyph="&#xE722;" />
-                                </Button>
-                                <Button x:Name="PlayBtnRefresh" Width="40" Height="40"
-                                        Background="Transparent" BorderThickness="0"
-                                        AutomationProperties.Name="刷新" ToolTipService.ToolTip="刷新（F5）"
-                                        Click="PlayBtnRefresh_Click">
-                                    <FontIcon FontFamily="{StaticResource SegoeFluent}" Glyph="&#xE72C;" />
-                                </Button>
-                            </StackPanel>
+                            <Border x:Name="LiveActionsToolbar"
+                                    HorizontalAlignment="Right" VerticalAlignment="Top"
+                                    Margin="8" Background="#202020" CornerRadius="4">
+                                <StackPanel Orientation="Horizontal">
+                                    <Button x:Name="PlayTopBtnScreenshot" Width="40" Height="40"
+                                            MinWidth="40" Padding="0"
+                                            Background="Transparent" BorderThickness="0" Foreground="White"
+                                            AutomationProperties.Name="截图"
+                                            Click="PlayTopBtnScreenshot_Click">
+                                        <ToolTipService.ToolTip>
+                                            <ToolTip Content="截图（F10）" Placement="Bottom"
+                                                     PlacementTarget="{Binding ElementName=PlayTopBtnScreenshot}" />
+                                        </ToolTipService.ToolTip>
+                                        <FontIcon FontFamily="{StaticResource SegoeFluent}" FontSize="20" Glyph="&#xE722;" />
+                                    </Button>
+                                    <Button x:Name="PlayBtnRefresh" Width="40" Height="40"
+                                            MinWidth="40" Padding="0"
+                                            Background="Transparent" BorderThickness="0" Foreground="White"
+                                            AutomationProperties.Name="刷新"
+                                            Click="PlayBtnRefresh_Click">
+                                        <ToolTipService.ToolTip>
+                                            <ToolTip Content="刷新（F5）" Placement="Bottom"
+                                                     PlacementTarget="{Binding ElementName=PlayBtnRefresh}" />
+                                        </ToolTipService.ToolTip>
+                                        <FontIcon FontFamily="{StaticResource SegoeFluent}" FontSize="20" Glyph="&#xE72C;" />
+                                    </Button>
+                                </StackPanel>
+                            </Border>
                             <Grid Height="48" VerticalAlignment="Bottom">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto" />
