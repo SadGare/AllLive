@@ -401,6 +401,7 @@
                     PointerEntered="Grid_PointerEntered"
                     PointerExited="Grid_PointerExited"
                     PointerMoved="Grid_PointerMoved"
+                    PointerWheelChanged="PlaybackSurface_PointerWheelChanged"
                     RequestedTheme="Dark">
                     <Grid.ContextFlyout>
                         <Flyout>
@@ -592,6 +593,18 @@
 
                                 <StackPanel Grid.Column="2" Orientation="Horizontal">
                                     <Button
+                                        x:Name="PlayBtnMute"
+                                        Width="48"
+                                        Height="48"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        AutomationProperties.Name="静音"
+                                        Click="PlayBtnMute_Click"
+                                        ToolTipService.ToolTip="静音（M）">
+                                        <FontIcon x:Name="MuteIcon" FontFamily="{StaticResource SegoeFluent}" Glyph="&#xE767;" />
+                                    </Button>
+
+                                    <Button
                                         x:Name="PlayBtnVolume"
                                         Width="48"
                                         Height="48"
@@ -716,6 +729,7 @@
                                     Height="48"
                                     Padding="8"
                                     Foreground="White"
+                                    Click="PlayBtnPause_Click"
                                     Visibility="{Binding ElementName=PlayBtnPause, Path=Visibility, Mode=OneWay}">
                                     <PathIcon
                                         HorizontalAlignment="Center"
@@ -727,6 +741,7 @@
                                     Height="48"
                                     Padding="8"
                                     Foreground="White"
+                                    Click="PlayBtnPlay_Click"
                                     Visibility="{Binding ElementName=PlayBtnPlay, Path=Visibility, Mode=OneWay}">
                                     <PathIcon
                                         HorizontalAlignment="Center"

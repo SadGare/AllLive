@@ -56,6 +56,10 @@ namespace AllLive.UWP.Views
         private bool isMini = false;
         DispatcherTimer timer_focus;
         DispatcherTimer controlTimer;
+        private double lastAudibleVolume = 1;
+        private int volumeFeedbackVersion;
+        private bool resumingLive;
+        private Task playerLoadTask = Task.CompletedTask;
 
         public LiveRoomPage()
         {
@@ -83,6 +87,7 @@ namespace AllLive.UWP.Views
             mediaPlayer.MediaOpened += MediaPlayer_MediaOpened;
             mediaPlayer.MediaEnded += MediaPlayer_MediaEnded;
             mediaPlayer.MediaFailed += MediaPlayer_MediaFailed;
+            mediaPlayer.CommandManager.PlayReceived += CommandManager_PlayReceived;
 
             timer_focus.Start();
             controlTimer.Start();
@@ -356,45 +361,14 @@ namespace AllLive.UWP.Views
                 //    }
                 //    break;
 
-                case Windows.System.VirtualKey.Up:
-                    if (mediaPlayer.Volume + 0.1 > 1)
-                    {
-                        mediaPlayer.Volume = 1;
-                    }
-                    else
-                    {
-                        mediaPlayer.Volume += 0.1;
-                    }
-
-
-                    TxtToolTip.Text = "音量:" + mediaPlayer.Volume.ToString("P");
-                    ToolTip.Visibility = Visibility.Visible;
-                    await Task.Delay(2000);
-                    ToolTip.Visibility = Visibility.Collapsed;
+                case Windows.System.VirtualKey.M:
+                    ToggleMute();
                     break;
-
+                case Windows.System.VirtualKey.Up:
+                    ChangeVolume(0.1);
+                    break;
                 case Windows.System.VirtualKey.Down:
-                    if (mediaPlayer.Volume - 0.1 < 0)
-                    {
-                        mediaPlayer.Volume = 0;
-                    }
-                    else
-                    {
-                        mediaPlayer.Volume -= 0.1;
-                    }
-
-
-                    if (mediaPlayer.Volume == 0)
-                    {
-                        TxtToolTip.Text = "静音";
-                    }
-                    else
-                    {
-                        TxtToolTip.Text = "音量:" + mediaPlayer.Volume.ToString("P");
-                    }
-                    ToolTip.Visibility = Visibility.Visible;
-                    await Task.Delay(2000);
-                    ToolTip.Visibility = Visibility.Collapsed;
+                    ChangeVolume(-0.1);
                     break;
                 case Windows.System.VirtualKey.Escape:
                     SetFullScreen(false);
@@ -477,7 +451,7 @@ namespace AllLive.UWP.Views
 
         private void LiveRoomVM_ChangedPlayUrl(object sender, string e)
         {
-            _ = SetPlayer(e);
+            playerLoadTask = SetPlayer(e);
         }
         private async Task SetPlayer(string url)
         {
@@ -570,6 +544,7 @@ namespace AllLive.UWP.Views
 
         private void StopPlay()
         {
+            mediaPlayer.CommandManager.PlayReceived -= CommandManager_PlayReceived;
             if (mediaPlayer != null)
             {
                 mediaPlayer.Pause();
@@ -812,11 +787,9 @@ namespace AllLive.UWP.Views
             var volume = SettingHelper.GetValue<double>(SettingHelper.PLAYER_VOLUME, 1.0);
             mediaPlayer.Volume = volume;
             SliderVolume.Value = volume;
-            SliderVolume.ValueChanged += new RangeBaseValueChangedEventHandler((e, args) =>
-            {
-                mediaPlayer.Volume = SliderVolume.Value;
-                SettingHelper.SetValue<double>(SettingHelper.PLAYER_VOLUME, SliderVolume.Value);
-            });
+            lastAudibleVolume = volume > 0 ? volume : 1;
+            UpdateMuteButton();
+            SliderVolume.ValueChanged += SliderVolume_ValueChanged;
             //亮度
             _brightness = SettingHelper.GetValue<double>(SettingHelper.PLAYER_BRIGHTNESS, 0);
             BrightnessShield.Opacity = _brightness;
@@ -934,16 +907,6 @@ namespace AllLive.UWP.Views
                 DanmuControl.Visibility = visibility;
                 SettingHelper.SetValue(SettingHelper.LiveDanmaku.SHOW, PlaySWDanmu.IsOn);
             });
-
-            ////音量
-            var volume = SettingHelper.GetValue<double>(SettingHelper.PLAYER_VOLUME, 1.0);
-            SliderVolume.Value = volume;
-            SliderVolume.ValueChanged += new RangeBaseValueChangedEventHandler((e, args) =>
-            {
-                mediaPlayer.Volume = SliderVolume.Value;
-                SettingHelper.SetValue<double>(SettingHelper.PLAYER_VOLUME, SliderVolume.Value);
-            });
-
 
             //弹幕关键词
             LiveDanmuSettingListWords.ItemsSource = settingVM.ShieldWords;
@@ -1100,6 +1063,67 @@ namespace AllLive.UWP.Views
                 PlayBtnExitFullScreen_Click(sender, null);
             }
         }
+        private void PlayBtnMute_Click(object sender, RoutedEventArgs e) => ToggleMute();
+
+        private void ToggleMute()
+        {
+            if (mediaPlayer.IsMuted || mediaPlayer.Volume == 0)
+            {
+                mediaPlayer.IsMuted = false;
+                if (mediaPlayer.Volume == 0) SliderVolume.Value = lastAudibleVolume;
+            }
+            else
+            {
+                mediaPlayer.IsMuted = true;
+            }
+            UpdateMuteButton();
+            ShowVolumeFeedback();
+        }
+
+        private void UpdateMuteButton()
+        {
+            var muted = mediaPlayer.IsMuted || mediaPlayer.Volume == 0;
+            MuteIcon.Glyph = muted ? "\uE74F" : "\uE767";
+            var label = muted ? "取消静音" : "静音";
+            ToolTipService.SetToolTip(PlayBtnMute, label + "（M）");
+            Windows.UI.Xaml.Automation.AutomationProperties.SetName(PlayBtnMute, label);
+        }
+
+        private void SliderVolume_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
+        {
+            mediaPlayer.Volume = e.NewValue;
+            mediaPlayer.IsMuted = false;
+            if (e.NewValue > 0) lastAudibleVolume = e.NewValue;
+            SettingHelper.SetValue(SettingHelper.PLAYER_VOLUME, e.NewValue);
+            UpdateMuteButton();
+        }
+
+        private void ChangeVolume(double delta)
+        {
+            SliderVolume.Value = Math.Max(0, Math.Min(1, SliderVolume.Value + delta));
+            mediaPlayer.IsMuted = false;
+            UpdateMuteButton();
+            ShowVolumeFeedback();
+        }
+
+        private async void ShowVolumeFeedback()
+        {
+            var version = ++volumeFeedbackVersion;
+            TxtToolTip.Text = mediaPlayer.IsMuted || mediaPlayer.Volume == 0
+                ? "静音" : "音量:" + mediaPlayer.Volume.ToString("P0");
+            ToolTip.Visibility = Visibility.Visible;
+            await Task.Delay(1500);
+            if (version == volumeFeedbackVersion) ToolTip.Visibility = Visibility.Collapsed;
+        }
+
+        private void PlaybackSurface_PointerWheelChanged(object sender, PointerRoutedEventArgs e)
+        {
+            var point = e.GetCurrentPoint((UIElement)sender);
+            if (point.Properties.IsHorizontalMouseWheel) return;
+            ChangeVolume(point.Properties.MouseWheelDelta / 120.0 * 0.05);
+            e.Handled = true;
+        }
+
         private void Grid_PointerEntered(object sender, PointerRoutedEventArgs e)
         {
             pointer_in_player = true;
@@ -1339,13 +1363,40 @@ namespace AllLive.UWP.Views
             await CaptureVideo();
         }
 
-        private void PlayBtnPlay_Click(object sender, RoutedEventArgs e)
+        private async void PlayBtnPlay_Click(object sender, RoutedEventArgs e)
         {
-            mediaPlayer.Play();
+            if (resumingLive || liveRoomVM.Loading) return;
+            resumingLive = true;
+            PlayBtnPlay.IsEnabled = false;
+            try
+            {
+                // Open a fresh source rather than replaying the paused live buffer.
+                if (await liveRoomVM.ReloadPlayUrlsAsync(preserveLine: true))
+                {
+                    await playerLoadTask;
+                }
+            }
+            finally
+            {
+                resumingLive = false;
+                PlayBtnPlay.IsEnabled = true;
+            }
+        }
+
+        private async void CommandManager_PlayReceived(MediaPlaybackCommandManager sender,
+            MediaPlaybackCommandManagerPlayReceivedEventArgs args)
+        {
+            args.Handled = true;
+            await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+            {
+                if (mediaPlayer.PlaybackSession.PlaybackState != MediaPlaybackState.Playing)
+                    PlayBtnPlay_Click(null, null);
+            });
         }
 
         private void PlayBtnPause_Click(object sender, RoutedEventArgs e)
         {
+            if (resumingLive) return;
             mediaPlayer.Pause();
         }
 

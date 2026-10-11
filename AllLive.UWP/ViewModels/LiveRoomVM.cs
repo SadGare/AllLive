@@ -379,13 +379,20 @@ namespace AllLive.UWP.ViewModels
 
         public async void LoadPlayUrl()
         {
+            await ReloadPlayUrlsAsync();
+        }
+
+        public async Task<bool> ReloadPlayUrlsAsync(bool preserveLine = false)
+        {
+            if (detail == null || CurrentQuality == null) return false;
+            var lineIndex = preserveLine && Lines != null ? Lines.IndexOf(CurrentLine) : 0;
             try
             {
                 var data = await Site.GetPlayUrls(detail, CurrentQuality);
                 if (data.Count == 0)
                 {
                     Utils.ShowMessageToast("加载播放地址失败");
-                    return;
+                    return false;
                 }
                 List<PlayurlLine> ls = new List<PlayurlLine>();
                 for (int i = 0; i < data.Count; i++)
@@ -398,11 +405,13 @@ namespace AllLive.UWP.ViewModels
                 }
 
                 Lines = ls;
-                CurrentLine = Lines[0];
+                CurrentLine = Lines[Math.Max(0, Math.Min(lineIndex, Lines.Count - 1))];
+                return true;
             }
             catch (Exception)
             {
                 Utils.ShowMessageToast("加载播放地址失败");
+                return false;
             }
 
 
